@@ -17,11 +17,24 @@ io.on('connection', (socket) => {
 	console.log('User Connected');
 
 	socket.on('join',({name,room},callback) => {
-		const{user,error}=addUser({id:socket.io,name,room});
+		const{user,error}=addUser({id:socket.id,name,room});
 		if(error) return callback(error);
 
-		socket.join(user,room);
-	 
+		socket.emit('message',{user: 'admin', text: `${user.name} welcome to ${user.room}`});// later turn this into a special admin message instead od a message from a user called admin
+		socket.broadcast.to(user.room).emit('message',{user: 'admin', text: `${user.name} has joined the chat`}); // later turn this into a special admin message instead od a message from a user called admin
+
+		socket.join(user.room);
+
+		callback();
+	 	
+	});
+
+	socket.on('sendMessage', (message,callback) => {
+		const user = getUser(socket.id);
+
+		io.to(user.room).emit('message',{user:user.name, text: message});
+
+		callback();
 	});
 
 	socket.on('disconnect', () =>{
